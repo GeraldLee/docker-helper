@@ -17,3 +17,7 @@ delete the container you choose
 docker-helper deleteall
 ```
 delete all containers 
+```shell
+docker-helper attach
+```
+attach a container currently running 
