@@ -12,7 +12,7 @@ sudo python setup.py install
 ```shell
 docker-helper delete
 ```
-delete the container you choose  
+list the containers already stopped and you can choose stop one of them 
 ```shell
 docker-helper deleteall
 ```
