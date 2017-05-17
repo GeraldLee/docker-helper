@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+
+import sys
+import subprocess
+
+
+class DockerWrapper:
+    board = "Num\t CONTAINER ID        IMAGE                                                 " \
+            "COMMAND             CREATED             STATUS                       PORTS               NAMES"
+
+    def list_images(self):
+        output = subprocess.check_output(["docker", "images"]).decode("utf-8")
+        return output.split("\n")
+
+    def list_containers(self):
+        output = subprocess.check_output(["docker", "ps", "-a"]).decode("utf-8")
+        return output.split("\n")[1:-1]
+
+    def list_containers_number(self):
+        output = subprocess.check_output(["docker", "ps", "-aq"]).decode("utf-8")
+        return output.split("\n")[:-1]
+
+    def delete_container(self, container):
+        output = subprocess.check_output(["docker", "rm", "-f", container]).decode("utf-8")
+
+    def get_container_id(self, container_str):
+        return container_str.split()[0];
+
+    def print_containers(self, containers):
+        num = 0
+        print(self.board)
+        for container in containers:
+            print("{0}\t {1}".format(num,container))
+            num += 1
+
+
+def main(argv):
+    '''
+        Docker-helper
+        delete     delete container according to the number you specified
+        delete-all delete all container running or exited
+    '''
+    dockerwrapper = DockerWrapper()
+    if len(argv) is 0:
+        print(main.__doc__)
+
+    elif argv[0] == "delete":
+        '''
+            delete     delete container according to the number you specified
+        '''
+        containers = dockerwrapper.list_containers()
+        num = len(containers)
+        dockerwrapper.print_containers(containers)
+        if num is 0:
+            print("No Container could be removed")
+            return
+
+        str = input("Container number you want to delete: ");
+        print(str)
+        if not str:
+            return
+        if int(str) > num - 1:
+            print("wrong container number {0}".format(str))
+            return
+        container_number = dockerwrapper.get_container_id(containers[int(str)])
+        dockerwrapper.delete_container(container_number)
+
+    elif argv[0] == "deleteall":
+        '''
+            delete-all delete all container running or exited
+        '''
+        num = 0
+        container_numbers = dockerwrapper.list_containers_number()
+        containers = dockerwrapper.list_containers()
+        if len(containers) is 0:
+            print("No containers will be deleted\n\n")
+            return
+        print("these containers will be deleted\n\n")
+        dockerwrapper.print_containers(containers)
+        str = input("Delete all these containers?Y/N: ")
+
+        if str is "Y" or str is "y":
+            for number in container_numbers:
+                dockerwrapper.delete_container(number)
+        else:
+            return
+
+    else:
+        print("\n[error] : command {0} isn't supported".format(argv[0]))
+        print(main.__doc__)
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
