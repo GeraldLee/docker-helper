@@ -2,7 +2,7 @@
 
 import sys
 import subprocess
-
+import re
 
 class DockerWrapper:
     board = "Num\t CONTAINER ID        IMAGE                                                 " \
@@ -15,6 +15,14 @@ class DockerWrapper:
     def list_containers(self):
         output = subprocess.check_output(["docker", "ps", "-a"]).decode("utf-8")
         return output.split("\n")[1:-1]
+
+    def list_up_containers(self):
+        containers = self.list_containers()
+        rcontainers = []
+        for container in containers:
+            if re.search("Up",container) is not None:
+                rcontainers.append(container)
+        return rcontainers
 
     def list_containers_number(self):
         output = subprocess.check_output(["docker", "ps", "-aq"]).decode("utf-8")
@@ -33,10 +41,13 @@ class DockerWrapper:
             print("{0}\t {1}".format(num,container))
             num += 1
 
-
+    def attach_container(self, container):
+        subprocess.call(["docker", "attach", container])
+        
 def main(argv):
     '''
         Docker-helper
+        attach     attach to a container running
         delete     delete container according to the number you specified
         delete-all delete all container running or exited
     '''
@@ -51,6 +62,7 @@ def main(argv):
         containers = dockerwrapper.list_containers()
         num = len(containers)
         dockerwrapper.print_containers(containers)
+        # if containers num is zero means no container could be deleted
         if num is 0:
             print("No Container could be removed")
             return
@@ -69,21 +81,45 @@ def main(argv):
         '''
             delete-all delete all container running or exited
         '''
-        num = 0
-        container_numbers = dockerwrapper.list_containers_number()
         containers = dockerwrapper.list_containers()
+        dockerwrapper.print_containers(containers)
+        # if containers num is zero means no container could be deleted
         if len(containers) is 0:
             print("No containers will be deleted\n\n")
             return
-        print("these containers will be deleted\n\n")
-        dockerwrapper.print_containers(containers)
-        str = input("Delete all these containers?Y/N: ")
+        print("these containers will be deleted\n")
 
+        #chose delete or not , this is last chance to regret :)
+        str = input("Delete all these containers?Y/N: ")
         if str is "Y" or str is "y":
-            for number in container_numbers:
+            for container in containers:
+                number = dockerwrapper.get_container_id(container)
                 dockerwrapper.delete_container(number)
         else:
             return
+
+
+    elif argv[0] == "attach":
+        containers = dockerwrapper.list_up_containers()
+        num = len(containers)
+        dockerwrapper.print_containers(containers)
+
+        #if containers num is zero means no container could be attached
+        if num is 0:
+            print("No Container could be attached")
+            return
+
+        # choose container number to attach
+        str = input("Container number you want to attach: ");
+        if not str:
+            return
+        if int(str) > num - 1:
+            print("wrong container number {0}".format(str))
+            return
+        container_number = dockerwrapper.get_container_id(containers[int(str)])
+        print(container_number)
+        dockerwrapper.attach_container(container_number)
+
 
     else:
         print("\n[error] : command {0} isn't supported".format(argv[0]))
