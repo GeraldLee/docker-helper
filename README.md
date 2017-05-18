@@ -14,7 +14,7 @@ docker-helper delete container/image
 ```
 list the container/images and you can choose to delete one of them 
 ```shell
-docker-helper deleteall
+docker-helper deleteall container/image
 ```
 delete all containers/images
 ```shell
