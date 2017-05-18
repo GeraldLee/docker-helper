@@ -10,13 +10,13 @@ sudo python setup.py install
 
 ## command 
 ```shell
-docker-helper delete
+docker-helper delete container/image
 ```
-list the containers and you can choose to delete one of them 
+list the container/images and you can choose to delete one of them 
 ```shell
 docker-helper deleteall
 ```
-delete all containers 
+delete all containers/images
 ```shell
 docker-helper attach
 ```
