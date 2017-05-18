@@ -8,9 +8,11 @@ class DockerWrapper:
     board = "Num\t CONTAINER ID        IMAGE                                                 " \
             "COMMAND             CREATED             STATUS                       PORTS               NAMES"
 
+    board_image = "Num\t REPOSITORY                                            TAG                 " \
+                  "IMAGE ID            CREATED             SIZE"
     def list_images(self):
         output = subprocess.check_output(["docker", "images"]).decode("utf-8")
-        return output.split("\n")
+        return output.split("\n")[1:-1]
 
     def list_containers(self):
         output = subprocess.check_output(["docker", "ps", "-a"]).decode("utf-8")
@@ -31,6 +33,12 @@ class DockerWrapper:
     def delete_container(self, container):
         output = subprocess.check_output(["docker", "rm", "-f", container]).decode("utf-8")
 
+    def delete_image(self,image):
+        output = subprocess.check_output(["docker", "rmi",image]).decode("utf-8")
+
+    def get_image_id(self, image_str):
+        return image_str.split()[2];
+
     def get_container_id(self, container_str):
         return container_str.split()[0];
 
@@ -41,6 +49,13 @@ class DockerWrapper:
             print("{0}\t {1}".format(num,container))
             num += 1
 
+    def print_images(self,images):
+        num = 0
+        print(self.board_image)
+        for image in images:
+            print("{0}\t {1}".format(num, image))
+            num += 1
+
     def attach_container(self, container):
         subprocess.call(["docker", "attach", container])
         
@@ -48,8 +63,8 @@ def main(argv):
     '''
         Docker-helper
         attach     attach to a container running
-        delete     delete container according to the number you specified
-        delete-all delete all container running or exited
+        delete     container/image delete container according to the number you specified
+        delete-all container/image delete all container running or exited
     '''
     dockerwrapper = DockerWrapper()
     if len(argv) is 0:
@@ -59,43 +74,65 @@ def main(argv):
         '''
             delete     delete container according to the number you specified
         '''
-        containers = dockerwrapper.list_containers()
-        num = len(containers)
-        dockerwrapper.print_containers(containers)
-        # if containers num is zero means no container could be deleted
-        if num is 0:
-            print("No Container could be removed")
-            return
+        if argv[1] == "container":
+            containers = dockerwrapper.list_containers()
+            num = len(containers)
+            dockerwrapper.print_containers(containers)
+            # if containers num is zero means no container could be deleted
+            if num is 0:
+                print("No Container could be removed")
+                return
 
-        str = input("Container number you want to delete: ");
-        print(str)
-        if not str:
+            str = input("Container number you want to delete: ");
+            if not str:
+                return
+            if int(str) > num - 1:
+                print("wrong container number {0}".format(str))
+                return
+            container_number = dockerwrapper.get_container_id(containers[int(str)])
+            dockerwrapper.delete_container(container_number)
+
+        elif argv[1] == "image":
+            images = dockerwrapper.list_images()
+            num = len(images)
+            dockerwrapper.print_images(images)
+            if num is 0:
+                print("No Image could be removed")
+                return
+
+            str = input("Image number you want to delete: ");
+            if not str:
+                return
+            if int(str) > num - 1:
+                print("wrong Image number {0}".format(str))
+                return
+            image_id = dockerwrapper.get_image_id(images[int(str)])
+            dockerwrapper.delete_image(image_id)
             return
-        if int(str) > num - 1:
-            print("wrong container number {0}".format(str))
-            return
-        container_number = dockerwrapper.get_container_id(containers[int(str)])
-        dockerwrapper.delete_container(container_number)
 
     elif argv[0] == "deleteall":
         '''
             delete-all delete all container running or exited
         '''
-        containers = dockerwrapper.list_containers()
-        dockerwrapper.print_containers(containers)
-        # if containers num is zero means no container could be deleted
-        if len(containers) is 0:
-            print("No containers will be deleted\n\n")
-            return
-        print("these containers will be deleted\n")
+        if argv[1] == "container":
+            containers = dockerwrapper.list_containers()
+            dockerwrapper.print_containers(containers)
+            # if containers num is zero means no container could be deleted
+            if len(containers) is 0:
+                print("No containers will be deleted\n\n")
+                return
+            print("these containers will be deleted\n")
 
-        #chose delete or not , this is last chance to regret :)
-        str = input("Delete all these containers?Y/N: ")
-        if str is "Y" or str is "y":
-            for container in containers:
-                number = dockerwrapper.get_container_id(container)
-                dockerwrapper.delete_container(number)
-        else:
+            #chose delete or not , this is last chance to regret :)
+            str = input("Delete all these containers?Y/N: ")
+            if str is "Y" or str is "y":
+                for container in containers:
+                    number = dockerwrapper.get_container_id(container)
+                    dockerwrapper.delete_container(number)
+            else:
+                return
+
+        elif argv[1] == "image":
             return
 
 
